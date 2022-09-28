@@ -20,7 +20,7 @@ static void SetNodeXY(Ptr<Node> node, double x, double y);
 int main (int argc, char *argv[])
 {
   uint16_t simTime = 10;
-  bool verbose = true;
+  //bool verbose = true;
   bool trace = true;
 
   // Configure command line parameters
@@ -64,6 +64,7 @@ int main (int argc, char *argv[])
   Ptr<OFSwitch13InternalHelper> of13Helper = CreateObject<OFSwitch13InternalHelper> ();
   of13Helper->InstallController (controllerNode);
   of13Helper->InstallSwitch (switchNode, switchPorts);
+  of13Helper->SetChannelType(OFSwitch13Helper::ChannelType::DEDICATEDP2P);
   of13Helper->CreateOpenFlowChannels ();
 
   // Install the TCP/IP stack into hosts nodes
@@ -92,14 +93,14 @@ int main (int argc, char *argv[])
     }
 
   //Visual configurations
-  AnimationInterface anim ("anim.xml");
   Names::Add("SDN Controller", controllerNode);
   Names::Add("Switch", switchNode);
-  anim.UpdateNodeColor(controllerNode, 0, 0, 0);
   SetNodeXY(controllerNode, 10, -20);
   SetNodeXY(switchNode, 10, -10);
   SetAllNodesXY(hosts, 0, 0);
 
+
+  //anim.UpdateNodeColor(controllerNode, 0, 0, 0);
 
   // Run the simulation
   Simulator::Stop (Seconds (simTime));
