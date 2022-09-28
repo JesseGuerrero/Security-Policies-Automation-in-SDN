@@ -8,6 +8,7 @@
 #include "ns3/netanim-module.h"
 #include <string>
 #include <list>
+#include <set>
 
 using namespace ns3;
 
@@ -47,43 +48,50 @@ void Deliverable2::InstallNodes() {
 }
 
 void Deliverable2::InstallSouthBound() {
+	std::set<Ptr<NetDevice>> southBoundDevices;
+	Ipv4AddressHelper address;
+	address.SetBase("10.1.1.0", "255.255.255.0");
+
 	for (size_t switchIndex = 0; switchIndex < switches.GetN (); switchIndex++) {
-			NodeContainer hosts;
-			hosts.Create (3);
+		NodeContainer hosts;
+		hosts.Create (3);
 
-			//Wire the switch to the hosts
-			PointToPointHelper pointToPoint;
-			pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
-			pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
-			for (size_t hostIndex = 0; hostIndex < hosts.GetN (); hostIndex++)
-			{
-				NodeContainer nodes;
-				nodes.Add(switches.Get(switchIndex));
-				nodes.Add(hosts.Get(hostIndex));
-				NetDeviceContainer devices;
-				devices = pointToPoint.Install (nodes);
-				if(switchIndex == 0) {
-					//InternetStackHelper stack;
-					//stack.Install (nodes);
-					Ipv4AddressHelper address;
-					const char *str = ("10.1." + std::to_string(switchIndex+1) + ".0").c_str();
-					address.SetBase(str, "255.255.255.0");
-					Ipv4InterfaceContainer interfaces = address.Assign (devices);
-				}
+		InternetStackHelper stack;
+		stack.Install (hosts);
+		//Wire the switch to the hosts
+		PointToPointHelper pointToPoint;
+		pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
+		pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
+		for (size_t hostIndex = 0; hostIndex < hosts.GetN (); hostIndex++)
+		{
+			NodeContainer nodes;
+			nodes.Add(switches.Get(switchIndex));
+			nodes.Add(hosts.Get(hostIndex));
+			NetDeviceContainer devices;
+			devices = pointToPoint.Install (nodes);
+			for (size_t deviceIndex = 0; deviceIndex < devices.GetN (); deviceIndex++) {
+				southBoundDevices.insert(devices.Get(deviceIndex));
 			}
-			if(switchIndex+1 < switches.GetN ()) {
-				NodeContainer nodes;
-				nodes.Add(switches.Get(switchIndex));
-				nodes.Add(switches.Get(switchIndex+1));
-				NetDeviceContainer devices;
-				devices = pointToPoint.Install (nodes);
-			}
-
-			of13Helper->InstallSwitch(switches.Get(switchIndex));
-			Names::Add("Switch " + std::to_string(switchIndex+1), switches.Get(switchIndex));
-			SetAllNodesXY(hosts, (switchIndex*7.5) + 3, 20, 1);
-			allHosts.push_back(hosts);
 		}
+		if(switchIndex+1 < switches.GetN ()) {
+			NodeContainer nodes;
+			nodes.Add(switches.Get(switchIndex));
+			nodes.Add(switches.Get(switchIndex+1));
+			NetDeviceContainer devices;
+			devices = pointToPoint.Install (nodes);
+		}
+
+		of13Helper->InstallSwitch(switches.Get(switchIndex));
+		Names::Add("Switch " + std::to_string(switchIndex+1), switches.Get(switchIndex));
+		SetAllNodesXY(hosts, (switchIndex*7.5) + 3, 20, 1);
+		allHosts.push_back(hosts);
+	}
+	NetDeviceContainer devices;
+	std::set<Ptr<NetDevice>>:: iterator it;
+	for( it = southBoundDevices.begin(); it!=southBoundDevices.end(); ++it){
+		devices.Add(*it);
+	}
+	address.Assign (devices);
 }
 
 void Deliverable2::SetAllNodesXY(NodeContainer nodes, double x, double y, double deltaX) {
