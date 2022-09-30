@@ -92,6 +92,8 @@ void Deliverable2::InstallSouthBound() {
 		devices.Add(*it);
 	}
 	address.Assign (devices);
+	Ptr<Ipv4> ip = allHosts.at(0).Get(0)->GetObject<Ipv4>();
+	NS_LOG_UNCOND ("Scratch Simulator");
 }
 
 void Deliverable2::SetAllNodesXY(NodeContainer nodes, double x, double y, double deltaX) {
