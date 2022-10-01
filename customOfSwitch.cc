@@ -195,9 +195,9 @@ void InstallPing(Ptr<Node> src, Ptr<Node> dest) {
 
 void SetupAppearenceNetAnim(std::vector<NodeContainer> allHosts) {
 	AnimationInterface anim("OfExampleAnim.xml");
-	uint32_t switchImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Switch.png");
-	uint32_t workstationImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Workstation.png");
-	uint32_t SDNImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/SDN.png");
+	//uint32_t switchImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Switch.png");
+	//uint32_t workstationImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Workstation.png");
+	//uint32_t SDNImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/SDN.png");
 	anim.UpdateNodeColor(controllerNode, 0, 0, 0);
 	anim.SetBackgroundImage("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/background.png", -4, -5, 0.03, 0.0375, 1);
 	for(uint16_t i = 0; i < allHosts.size(); i++) {
@@ -207,6 +207,7 @@ void SetupAppearenceNetAnim(std::vector<NodeContainer> allHosts) {
 
 		}
 	}
+	/*
 	//Controller
 	anim.UpdateNodeImage(0, SDNImageID);
 	anim.UpdateNodeSize(0, 3, 3);
@@ -221,6 +222,6 @@ void SetupAppearenceNetAnim(std::vector<NodeContainer> allHosts) {
 	for(uint16_t i = 5; i <= 16; i++) {
 		anim.UpdateNodeSize(i, 2, 2);
 		anim.UpdateNodeImage(i, workstationImageID);
-	}
+	}*/
 }
 
