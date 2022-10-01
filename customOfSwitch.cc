@@ -45,11 +45,13 @@ InternetStackHelper internet; // Install the TCP/IP stack into hosts nodes
 CsmaHelper csmaHelper;
 NetDeviceContainer hostDevices;
 NetDeviceContainer switchPorts;
+
 void SetAllNodesXY(NodeContainer nodes, double x, double y, double deltaX);
 void SetNodeXY(Ptr<Node> node, double x, double y);
-void SetupSwitch(NodeContainer hosts);
+void SetupSwitch(NodeContainer hosts, uint16_t switchID, uint16_t xCoord);
 void SetupIpv4Addresses();
 void InstallPing(Ptr<Node> src, Ptr<Node> dest);
+//void SetupAppearenceNetAnim();
 
 int
 main (int argc, char *argv[])
@@ -82,7 +84,10 @@ main (int argc, char *argv[])
 	// Enable checksum computations (required by OFSwitch13 module)
 	GlobalValue::Bind ("ChecksumEnabled", BooleanValue (true));
 
+
 	switches.Create(3);
+
+	// Use the CsmaHelper to connect host nodes to the switch node
 	csmaHelper.SetChannelAttribute ("DataRate", DataRateValue (DataRate ("100Mbps")));
 	csmaHelper.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (500)));
 
@@ -93,23 +98,24 @@ main (int argc, char *argv[])
 	// Configure the OpenFlow network domain
 	of13Helper->InstallController (controllerNode);
 
-	//Southbound Network
 	NodeContainer hosts1, hosts2, hosts3;
 	hosts1.Create (3); hosts2.Create(3); hosts3.Create(3);
-	SetupSwitch(hosts1);
-	SetupSwitch(hosts2);
-	SetupSwitch(hosts3);
+	// Create two host nodes
+	//switch 1
+	SetupSwitch(hosts1, 0, 3);
+	SetupSwitch(hosts2, 1, 10);
+	SetupSwitch(hosts3, 2, 17);
 
 	//OfSwitch Config
 	of13Helper->SetChannelType(OFSwitch13Helper::ChannelType::DEDICATEDP2P);
 	of13Helper->CreateOpenFlowChannels ();
 
 	SetupIpv4Addresses();
-	//InstallPing(hosts1.Get(0), hosts2.Get(0));
+	InstallPing(hosts1.Get(0), hosts2.Get(0));
 
-	//Visuals
 	SetNodeXY(controllerNode, 15, 5);
 	SetAllNodesXY(switches, 5, 12.5, 7.5);
+
 	AnimationInterface anim("OfExampleAnim.xml");
 
 	// Enable datapath stats and pcap traces at hosts, switch(es), and controller(s)
@@ -151,20 +157,19 @@ void SetNodeXY(Ptr<Node> node, double x, double y) {
 											 "LayoutType", StringValue ("RowFirst"));
 	mobileHosts.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 	mobileHosts.Install (node);
-	//anim.SetConstantPosition(node, x, y, 0);
 }
 
-void SetupSwitch(NodeContainer hosts) {
+void SetupSwitch(NodeContainer hosts, uint16_t switchID, uint16_t xCoord) {
 	for (size_t i = 0; i < hosts.GetN (); i++)
 	{
-	  NodeContainer pair (hosts.Get (i), switches.Get(2));
+	  NodeContainer pair (hosts.Get (i), switches.Get(switchID));
 	  NetDeviceContainer link = csmaHelper.Install (pair);
 	  hostDevices.Add (link.Get (0));
 	  switchPorts.Add (link.Get (1));
 	}
-	of13Helper->InstallSwitch (switches.Get(2), switchPorts);
+	of13Helper->InstallSwitch (switches.Get(switchID), switchPorts);
 	internet.Install (hosts);
-	SetAllNodesXY(hosts, 17, 20, 1);
+	SetAllNodesXY(hosts, xCoord, 20, 1);
 }
 
 void SetupIpv4Addresses() {
@@ -183,3 +188,5 @@ void InstallPing(Ptr<Node> src, Ptr<Node> dest) {
 	ApplicationContainer pingApps = pingHelper.Install(src);
 	pingApps.Start (Seconds (3));
 }
+
+
