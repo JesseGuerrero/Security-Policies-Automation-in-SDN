@@ -6,3 +6,5 @@ Deliverable 2 Video: https://bit.ly/3EdDe2n<br><br>
 Steps to run:<br>
 1. Install NS3 with dependencies & pyvis<br>
 2. Run deliverable*.cc in scratch/deliverable9.cc<br>
+
+[![Watch the video](https://i.imgur.com/vKb2F1B.png)](https://youtu.be/vt5fpE0bzSY)
