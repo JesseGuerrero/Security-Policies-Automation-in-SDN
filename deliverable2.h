@@ -27,6 +27,9 @@ public:
 	void SetupAppearenceNetAnim();
 	void SetAllNodesXY(NodeContainer nodes, double x, double y, double deltaX);
 	void SetNodeXY(Ptr<Node> node, double x, double y);
+
+	//Utils
+	void PrintNodeAddress(Ptr<Node> node);
 };
 
 void Deliverable2::InstallNetwork() {
@@ -35,6 +38,8 @@ void Deliverable2::InstallNetwork() {
 	InstallNodes();
 	SetupAppearencePyVis();
 	SetupAppearenceNetAnim();
+	PrintNodeAddress(allHosts.at(0).Get(0));
+	PrintNodeAddress(allHosts.at(1).Get(0));
 }
 
 void Deliverable2::InstallNodes() {
@@ -92,8 +97,14 @@ void Deliverable2::InstallSouthBound() {
 		devices.Add(*it);
 	}
 	address.Assign (devices);
-	Ptr<Ipv4> ip = allHosts.at(0).Get(0)->GetObject<Ipv4>();
-	NS_LOG_UNCOND ("Scratch Simulator");
+
+}
+
+void Deliverable2::PrintNodeAddress(Ptr<Node> node) {
+	std::ostringstream out;
+	Ipv4Address addr = node->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
+	addr.Print(out);
+	NS_LOG_UNCOND (out.str().c_str());
 }
 
 void Deliverable2::SetAllNodesXY(NodeContainer nodes, double x, double y, double deltaX) {
