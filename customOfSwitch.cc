@@ -39,6 +39,7 @@
 
 using namespace ns3;
 
+Ptr<Node> controllerNode = CreateObject<Node> ();
 Ptr<OFSwitch13InternalHelper> of13Helper = CreateObject<OFSwitch13InternalHelper> ();
 NodeContainer switches;
 InternetStackHelper internet; // Install the TCP/IP stack into hosts nodes
@@ -51,7 +52,7 @@ void SetNodeXY(Ptr<Node> node, double x, double y);
 void SetupSwitch(NodeContainer hosts, uint16_t switchID, uint16_t xCoord);
 void SetupIpv4Addresses();
 void InstallPing(Ptr<Node> src, Ptr<Node> dest);
-//void SetupAppearenceNetAnim();
+void SetupAppearenceNetAnim(std::vector<NodeContainer> allHosts);
 
 int
 main (int argc, char *argv[])
@@ -91,8 +92,7 @@ main (int argc, char *argv[])
 	csmaHelper.SetChannelAttribute ("DataRate", DataRateValue (DataRate ("100Mbps")));
 	csmaHelper.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (500)));
 
-	// Create the controller node
-	Ptr<Node> controllerNode = CreateObject<Node> ();
+	// Name the controller node
 	Names::Add("Controller", controllerNode);
 
 	// Configure the OpenFlow network domain
@@ -116,7 +116,11 @@ main (int argc, char *argv[])
 	SetNodeXY(controllerNode, 15, 5);
 	SetAllNodesXY(switches, 5, 12.5, 7.5);
 
-	AnimationInterface anim("OfExampleAnim.xml");
+	std::vector<NodeContainer> allHosts;
+	allHosts.push_back(hosts1);
+	allHosts.push_back(hosts2);
+	allHosts.push_back(hosts3);
+	SetupAppearenceNetAnim(allHosts);
 
 	// Enable datapath stats and pcap traces at hosts, switch(es), and controller(s)
 	if (trace)
@@ -189,4 +193,34 @@ void InstallPing(Ptr<Node> src, Ptr<Node> dest) {
 	pingApps.Start (Seconds (3));
 }
 
+void SetupAppearenceNetAnim(std::vector<NodeContainer> allHosts) {
+	AnimationInterface anim("OfExampleAnim.xml");
+	uint32_t switchImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Switch.png");
+	uint32_t workstationImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Workstation.png");
+	uint32_t SDNImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/SDN.png");
+	anim.UpdateNodeColor(controllerNode, 0, 0, 0);
+	anim.SetBackgroundImage("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/background.png", -4, -5, 0.03, 0.0375, 1);
+	for(uint16_t i = 0; i < allHosts.size(); i++) {
+		NodeContainer hosts = allHosts.at(i);
+		for(uint16_t j = 0; j < hosts.GetN(); j++) {
+			anim.UpdateNodeColor(hosts.Get(j), 0, 255, 255);
+
+		}
+	}
+	//Controller
+	anim.UpdateNodeImage(0, SDNImageID);
+	anim.UpdateNodeSize(0, 3, 3);
+
+	//Switch
+	for(uint16_t i = 1; i <= 4; i++) {
+		anim.UpdateNodeImage(i, switchImageID);
+		anim.UpdateNodeSize(i, 3, 3);
+	}
+
+	//Hosts
+	for(uint16_t i = 5; i <= 16; i++) {
+		anim.UpdateNodeSize(i, 2, 2);
+		anim.UpdateNodeImage(i, workstationImageID);
+	}
+}
 
