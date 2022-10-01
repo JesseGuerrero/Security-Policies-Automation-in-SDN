@@ -120,7 +120,7 @@ main (int argc, char *argv[])
 	allHosts.push_back(hosts1);
 	allHosts.push_back(hosts2);
 	allHosts.push_back(hosts3);
-	SetupAppearenceNetAnim(allHosts);
+	//SetupAppearenceNetAnim(allHosts);
 
 	// Enable datapath stats and pcap traces at hosts, switch(es), and controller(s)
 	if (trace)
