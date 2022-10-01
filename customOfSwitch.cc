@@ -111,7 +111,13 @@ main (int argc, char *argv[])
 	of13Helper->CreateOpenFlowChannels ();
 
 	SetupIpv4Addresses();
-	InstallPing(hosts1.Get(0), hosts2.Get(0));
+	//InstallPing(hosts1.Get(0), hosts2.Get(0));
+	V4PingHelper pingHelper = V4PingHelper ("10.1.1.2");
+	pingHelper.SetAttribute ("Interval", TimeValue (Seconds (100)));
+	pingHelper.SetAttribute ("Verbose", BooleanValue (true));
+
+	ApplicationContainer pingApps = pingHelper.Install(hosts1.Get(0));
+	pingApps.Start (Seconds (3));
 
 	SetNodeXY(controllerNode, 15, 5);
 	SetAllNodesXY(switches, 5, 12.5, 7.5);
@@ -121,8 +127,32 @@ main (int argc, char *argv[])
 	allHosts.push_back(hosts2);
 	allHosts.push_back(hosts3);
 	AnimationInterface anim("OfExampleAnim.xml");
-	SetupAppearenceNetAnim(anim, controllerNode, allHosts);
+	//SetupAppearenceNetAnim(anim, controllerNode, allHosts);
 	//AnimationInterface anim("OfExampleAnim.xml");
+	uint32_t switchImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Switch.png");
+	uint32_t workstationImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Workstation.png");
+	uint32_t SDNImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/SDN.png");
+	anim.UpdateNodeColor(controllerNode, 0, 0, 0);
+	anim.SetBackgroundImage("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/background.png", -4, -5, 0.025, 0.0325, 1);
+	for(uint16_t i = 0; i < allHosts.size(); i++) {
+		NodeContainer hosts = allHosts.at(i);
+		for(uint16_t j = 0; j < hosts.GetN(); j++) {
+			anim.UpdateNodeColor(hosts.Get(j), 0, 255, 255);
+		}
+	}
+	//Controller
+	anim.UpdateNodeImage(3, SDNImageID);
+	anim.UpdateNodeSize(3, 3, 3);
+	//Switch
+	for(uint16_t i = 0; i <= 2; i++) {
+		anim.UpdateNodeImage(i, switchImageID);
+		anim.UpdateNodeSize(i, 3, 3);
+	}
+	//Hosts
+	for(uint16_t i = 4; i <= 12; i++) {
+		anim.UpdateNodeSize(i, 2, 2);
+		anim.UpdateNodeImage(i, workstationImageID);
+	}
 
 	// Enable datapath stats and pcap traces at hosts, switch(es), and controller(s)
 	if (trace)
@@ -187,7 +217,7 @@ void SetupIpv4Addresses() {
 
 void InstallPing(Ptr<Node> src, Ptr<Node> dest) {
 	// Configure ping application between hosts
-	V4PingHelper pingHelper = V4PingHelper (dest->GetObject<Ipv4>()->GetAddress(1,0).GetLocal());
+	V4PingHelper pingHelper = V4PingHelper ("10.1.1.2");
 	pingHelper.SetAttribute ("Interval", TimeValue (Seconds (100)));
 	pingHelper.SetAttribute ("Verbose", BooleanValue (true));
 
@@ -196,8 +226,7 @@ void InstallPing(Ptr<Node> src, Ptr<Node> dest) {
 }
 
 void SetupAppearenceNetAnim(AnimationInterface anim, Ptr<Node> controllerNode, std::vector<NodeContainer> allHosts) {
-	/*
-	uint32_t switchImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Switch.png");
+	/*uint32_t switchImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Switch.png");
 	uint32_t workstationImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Workstation.png");
 	uint32_t SDNImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/SDN.png");
 	anim.UpdateNodeColor(controllerNode, 0, 0, 0);
