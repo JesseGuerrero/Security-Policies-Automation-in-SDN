@@ -51,7 +51,7 @@ void SetNodeXY(Ptr<Node> node, double x, double y);
 void SetupSwitch(NodeContainer hosts, uint16_t switchID, uint16_t xCoord);
 void SetupIpv4Addresses();
 void InstallPing(Ptr<Node> src, Ptr<Node> dest);
-void SetupAppearenceNetAnim(Ptr<Node> controllerNode, std::vector<NodeContainer> allHosts);
+void SetupAppearenceNetAnim(AnimationInterface anim, Ptr<Node> controllerNode, std::vector<NodeContainer> allHosts);
 
 int
 main (int argc, char *argv[])
@@ -120,7 +120,9 @@ main (int argc, char *argv[])
 	allHosts.push_back(hosts1);
 	allHosts.push_back(hosts2);
 	allHosts.push_back(hosts3);
-	SetupAppearenceNetAnim(controllerNode, allHosts);
+	AnimationInterface anim("OfExampleAnim.xml");
+	SetupAppearenceNetAnim(anim, controllerNode, allHosts);
+	//AnimationInterface anim("OfExampleAnim.xml");
 
 	// Enable datapath stats and pcap traces at hosts, switch(es), and controller(s)
 	if (trace)
@@ -193,8 +195,8 @@ void InstallPing(Ptr<Node> src, Ptr<Node> dest) {
 	pingApps.Start (Seconds (3));
 }
 
-void SetupAppearenceNetAnim(Ptr<Node> controllerNode, std::vector<NodeContainer> allHosts) {
-	AnimationInterface anim("OfExampleAnim.xml");/*
+void SetupAppearenceNetAnim(AnimationInterface anim, Ptr<Node> controllerNode, std::vector<NodeContainer> allHosts) {
+	/*
 	uint32_t switchImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Switch.png");
 	uint32_t workstationImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Workstation.png");
 	uint32_t SDNImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/SDN.png");
@@ -204,10 +206,8 @@ void SetupAppearenceNetAnim(Ptr<Node> controllerNode, std::vector<NodeContainer>
 		NodeContainer hosts = allHosts.at(i);
 		for(uint16_t j = 0; j < hosts.GetN(); j++) {
 			anim.UpdateNodeColor(hosts.Get(j), 0, 255, 255);
-
 		}
 	}
-
 	//Controller
 	anim.UpdateNodeImage(3, SDNImageID);
 	anim.UpdateNodeSize(3, 3, 3);
