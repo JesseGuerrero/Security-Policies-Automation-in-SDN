@@ -84,7 +84,7 @@ main (int argc, char *argv[])
 	of13Helper->CreateOpenFlowChannels ();
 
 	SetupIpv4Addresses();
-	V4PingHelper pingHelper = V4PingHelper ("10.1.1.2");
+	V4PingHelper pingHelper = V4PingHelper ("10.1.1.4");
 	pingHelper.SetAttribute ("Interval", TimeValue (Seconds (100)));
 	pingHelper.SetAttribute ("Verbose", BooleanValue (true));
 
@@ -99,7 +99,7 @@ main (int argc, char *argv[])
 	allHosts.push_back(hosts2);
 	allHosts.push_back(hosts3);
 	AnimationInterface anim("OfExampleAnim.xml");
-	//SetupAppearenceNetAnim(anim, controllerNode, allHosts);
+
 	//AnimationInterface anim("OfExampleAnim.xml");
 	uint32_t switchImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Switch.png");
 	uint32_t workstationImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Workstation.png");
