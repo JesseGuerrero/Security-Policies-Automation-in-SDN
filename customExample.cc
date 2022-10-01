@@ -14,11 +14,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <fstream>
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/point-to-point-module.h"
 #include "ns3/applications-module.h"
+#include "ns3/csma-module.h"
+#include "ns3/internet-apps-module.h"
+#include "ns3/ipv4-static-routing-helper.h"
+#include "ns3/ipv4-routing-table-entry.h"
 
 // Default Network Topology
 //
@@ -37,16 +42,16 @@ main (int argc, char *argv[])
 	CommandLine cmd (__FILE__);
 	cmd.Parse (argc, argv);
 
-	Time::SetResolution (Time::NS);
+	Time::SetResolution (Time::NS);//Nanoseconds
 	LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_ALL);
 	LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_ALL);
 
 	NodeContainer nodes;
 	nodes.Create (3);
 
-	PointToPointHelper pointToPoint;
-	pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
-	pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
+	CsmaHelper pointToPoint;
+	pointToPoint.SetChannelAttribute ("DataRate", DataRateValue (5000000));
+	pointToPoint.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
 
 	NodeContainer left, right;
 	left.Add(nodes.Get(0)); left.Add(nodes.Get(1));
@@ -74,6 +79,17 @@ main (int argc, char *argv[])
 	address.Assign (devices);
 	Ipv4InterfaceContainer interfaces = address.Assign(devices);
 
+	V4PingHelper ping("10.1.1.2");
+	ping.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
+	ping.SetAttribute ("Size", UintegerValue (1024));
+	ping.SetAttribute ("Verbose", BooleanValue (true));
+
+	ApplicationContainer apps = ping.Install (nodes.Get(2));
+	apps.Start (Seconds (1.0));
+	apps.Stop (Seconds (110.0));
+
+	Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+/*
 	UdpEchoServerHelper echoServer (9);
 
 	ApplicationContainer serverApps = echoServer.Install (nodes.Get (1));
@@ -88,7 +104,7 @@ main (int argc, char *argv[])
 	ApplicationContainer clientApps = echoClient.Install (nodes.Get (2));
 	clientApps.Start (Seconds (2.0));
 	clientApps.Stop (Seconds (10.0));
-
+*/
 	Simulator::Run ();
 	Simulator::Destroy ();
 	return 0;
