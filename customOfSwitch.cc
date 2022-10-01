@@ -34,13 +34,18 @@
 #include <ns3/internet-module.h>
 #include <ns3/ofswitch13-module.h>
 #include <ns3/internet-apps-module.h>
+#include "ns3/netanim-module.h"
+#include "ns3/mobility-module.h"
 
 using namespace ns3;
+
+void SetAllNodesXY(NodeContainer nodes, double x, double y, double deltaX);
+void SetNodeXY(Ptr<Node> node, double x, double y);
 
 int
 main (int argc, char *argv[])
 {
-  uint16_t simTime = 10;
+  uint16_t simTime = 38;
   bool verbose = false;
   bool trace = false;
 
@@ -76,12 +81,12 @@ main (int argc, char *argv[])
   Ptr<Node> switchNode = CreateObject<Node> ();
 
   // Create switch 2
-  Ptr<Node> switchNode2 = CreateObject<Node> ();
+  //Ptr<Node> switchNode2 = CreateObject<Node> ();
 
   // Use the CsmaHelper to connect host nodes to the switch node
   CsmaHelper csmaHelper;
   csmaHelper.SetChannelAttribute ("DataRate", DataRateValue (DataRate ("100Mbps")));
-  csmaHelper.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
+  csmaHelper.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (500)));
 
   NetDeviceContainer hostDevices;
   NetDeviceContainer switchPorts;
@@ -102,7 +107,7 @@ main (int argc, char *argv[])
   of13Helper->InstallController (controllerNode);
   of13Helper->InstallSwitch (switchNode, switchPorts);
   //of13Helper->InstallSwitch(switchNode2);
-  of13Helper->SetChannelType(OFSwitch13Helper::ChannelType::DEDICATEDP2P);
+  of13Helper->SetChannelType(OFSwitch13Helper::ChannelType::DEDICATEDCSMA);
   of13Helper->CreateOpenFlowChannels ();
 
   // Install the TCP/IP stack into hosts nodes
@@ -116,14 +121,22 @@ main (int argc, char *argv[])
   hostIpIfaces = ipv4helpr.Assign (hostDevices);
 
   // Configure ping application between hosts
+
   std::ostringstream out;
   hostIpIfaces.GetAddress(1).Print(out);
   NS_LOG_UNCOND (out.str().c_str());
-  V4PingHelper pingHelper = V4PingHelper (hostIpIfaces.GetAddress (1));
-
+  V4PingHelper pingHelper = V4PingHelper ("10.1.1.2");
+  pingHelper.SetAttribute ("Interval", TimeValue (Seconds (8.0)));
   pingHelper.SetAttribute ("Verbose", BooleanValue (true));
+
   ApplicationContainer pingApps = pingHelper.Install (hosts.Get (0));
-  pingApps.Start (Seconds (1));
+  pingApps.Start (Seconds (0));
+
+  SetAllNodesXY(hosts, 3, 20, 1);
+  SetNodeXY(controllerNode, 15, 5);
+  SetAllNodesXY(switches, 5, 12.5, 7.5);
+
+  AnimationInterface anim("OfExampleAnim.xml");
 
   // Enable datapath stats and pcap traces at hosts, switch(es), and controller(s)
   if (trace)
@@ -138,4 +151,31 @@ main (int argc, char *argv[])
   Simulator::Stop (Seconds (simTime));
   Simulator::Run ();
   Simulator::Destroy ();
+}
+
+void SetAllNodesXY(NodeContainer nodes, double x, double y, double deltaX) {
+	MobilityHelper mobileHosts;
+	mobileHosts.SetPositionAllocator ("ns3::GridPositionAllocator",
+											"MinX", DoubleValue (x),
+											"MinY", DoubleValue (y),
+											"DeltaX", DoubleValue (deltaX),
+										   "DeltaY", DoubleValue (10.0),
+										   "GridWidth", UintegerValue (nodes.GetN()),
+											 "LayoutType", StringValue ("RowFirst"));
+	mobileHosts.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+	mobileHosts.Install (nodes);
+}
+
+void SetNodeXY(Ptr<Node> node, double x, double y) {
+	MobilityHelper mobileHosts;
+	mobileHosts.SetPositionAllocator ("ns3::GridPositionAllocator",
+											"MinX", DoubleValue (x),
+											"MinY", DoubleValue (y),
+											"DeltaX", DoubleValue (10.0),
+										   "DeltaY", DoubleValue (10.0),
+										   "GridWidth", UintegerValue (3),
+											 "LayoutType", StringValue ("RowFirst"));
+	mobileHosts.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+	mobileHosts.Install (node);
+	//anim.SetConstantPosition(node, x, y, 0);
 }
