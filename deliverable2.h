@@ -6,6 +6,7 @@
 #include <ns3/internet-apps-module.h>
 #include "ns3/mobility-module.h"
 #include "ns3/netanim-module.h"
+#include "ns3/applications-module.h"
 #include <string>
 #include <list>
 #include <set>
@@ -23,6 +24,7 @@ public:
 	void InstallNetwork();
 	void InstallNodes();
 	void InstallSouthBound();
+	void InstallPingApp();
 	void SetupAppearencePyVis();
 	void SetupAppearenceNetAnim();
 	void SetAllNodesXY(NodeContainer nodes, double x, double y, double deltaX);
@@ -36,6 +38,7 @@ void Deliverable2::InstallNetwork() {
 	controllerNode = CreateObject<Node>();
 	of13Helper = CreateObject<OFSwitch13InternalHelper>();
 	InstallNodes();
+	InstallPingApp();
 	SetupAppearencePyVis();
 	SetupAppearenceNetAnim();
 	PrintNodeAddress(allHosts.at(0).Get(0));
@@ -98,6 +101,24 @@ void Deliverable2::InstallSouthBound() {
 	}
 	address.Assign (devices);
 
+}
+
+void Deliverable2::InstallPingApp() {
+	Time::SetResolution (Time::NS);
+	LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_ALL);
+	LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_ALL);
+	UdpEchoServerHelper echoServer(5000);
+	ApplicationContainer serverApps = echoServer.Install(allHosts.at(0).Get(0));
+	serverApps.Start (Seconds (1.0));
+	serverApps.Stop (Seconds (10.0));
+
+	UdpEchoClientHelper echoClient (Ipv4Address("10.100.0.2"), 5000);
+	echoClient.SetAttribute ("MaxPackets", UintegerValue (1));
+	echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
+	echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
+	ApplicationContainer clientApps = echoClient.Install (switches.Get(0));
+	clientApps.Start (Seconds (2.0));
+	clientApps.Stop (Seconds (10.0));
 }
 
 void Deliverable2::PrintNodeAddress(Ptr<Node> node) {
