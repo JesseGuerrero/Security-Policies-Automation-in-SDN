@@ -27,6 +27,8 @@
 #include "ns3/boolean.h"
 #include "ns3/seq-ts-size-header.h"
 #include "ns3/applications-module.h"
+#include "ns3/yans-wifi-channel.h"
+#include "ns3/yans-wifi-helper.h"
 
 using namespace ns3;
 
@@ -150,11 +152,46 @@ main (int argc, char *argv[])
 	clientApps.Start (Seconds (7));
 	clientApps.Stop (Seconds (8));
 
+	Ptr<Node> cell = CreateObject<Node>();
+	NodeContainer wirelessPair;
+	wirelessPair.Add(cell); wirelessPair.Add(apiNode);
+	SetNodeXY(cell, 3, 7);
+	WifiHelper wifi;
+	std::string phyMode ("DsssRate1Mbps");
+	YansWifiPhyHelper wifiPhy =  YansWifiPhyHelper::Default ();
+	wifiPhy.Set ("RxGain", DoubleValue (-10) );
+	wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
+	YansWifiChannelHelper wifiChannel;
+	wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
+	wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel");
+	wifiPhy.SetChannel (wifiChannel.Create ());
+
+	// Add an upper mac and disable rate control
+	WifiMacHelper wifiMac;
+	wifi.SetStandard (WIFI_STANDARD_80211b);
+	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
+								"DataMode",StringValue (phyMode),
+								"ControlMode",StringValue (phyMode));
+	// Set it to adhoc mode
+	wifiMac.SetType ("ns3::AdhocWifiMac");
+	NetDeviceContainer wirelessDevs = wifi.Install (wifiPhy, wifiMac, wirelessPair);
+	internet.Install(cell);
+	Ipv4AddressHelper address2;
+	address2.SetBase ("10.1.7.0", "255.255.255.0");
+	Ipv4InterfaceContainer wirelessPairInterface;
+	wirelessPairInterface = address2.Assign (wirelessDevs);
+
+	V4PingHelper pingHelper2 = V4PingHelper (wirelessPairInterface.GetAddress(1));
+	pingHelper2.SetAttribute ("Interval", TimeValue (Seconds (100)));
+	pingHelper2.SetAttribute ("Verbose", BooleanValue (true));
+	ApplicationContainer pingApps2 = pingHelper2.Install(cell);
+	pingApps2.Start (Seconds (6));
 
 	AnimationInterface anim("D2.xml");
 	uint32_t switchImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Switch.png");
 	uint32_t workstationImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Workstation.png");
 	uint32_t SDNImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/SDN.png");
+	uint32_t APIImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/API.png");
 	anim.UpdateNodeColor(controllerNode, 0, 0, 0);
 	anim.SetBackgroundImage("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/background.png", -4, -5, 0.025, 0.0325, 1);
 	for(uint16_t i = 0; i < allHosts.size(); i++) {
@@ -163,6 +200,9 @@ main (int argc, char *argv[])
 			anim.UpdateNodeColor(hosts.Get(j), 0, 255, 255);
 		}
 	}
+	//API
+	anim.UpdateNodeImage(13,APIImageID);
+	anim.UpdateNodeSize(13, 3, 3);
 	//Controller
 	anim.UpdateNodeImage(3, SDNImageID);
 	anim.UpdateNodeSize(3, 3, 3);
