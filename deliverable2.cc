@@ -72,7 +72,7 @@ main (int argc, char *argv[])
 	of13Helper->InstallController (controllerNode);
 
 	NodeContainer hosts1, hosts2, hosts3;
-	hosts1.Create (3); hosts2.Create(3); hosts3.Create(3);
+	hosts1.Create (2); hosts2.Create(3); hosts3.Create(3);
 	// Create two host nodes
 	//switch 1
 	SetupSwitch(hosts1, 0, 3);
@@ -102,8 +102,11 @@ main (int argc, char *argv[])
 
 	//AnimationInterface anim("OfExampleAnim.xml");
 	uint32_t switchImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Switch.png");
-	uint32_t workstationImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Workstation.png");
+	uint32_t workstationImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/workstation.png");
 	uint32_t SDNImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/SDN.png");
+	uint32_t routerImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/router.png");
+	uint32_t laptopImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/laptop.png");
+	uint32_t serverImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/server.png");
 	anim.UpdateNodeColor(controllerNode, 0, 0, 0);
 	anim.SetBackgroundImage("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/background.png", -4, -5, 0.025, 0.0325, 1);
 	for(uint16_t i = 0; i < allHosts.size(); i++) {
@@ -121,10 +124,18 @@ main (int argc, char *argv[])
 		anim.UpdateNodeSize(i, 3, 3);
 	}
 	//Hosts
-	for(uint16_t i = 4; i <= 12; i++) {
+	anim.UpdateNodeSize(4, 2, 2);
+	anim.UpdateNodeImage(4, routerImageID);
+	anim.UpdateNodeSize(5, 2, 2);
+	anim.UpdateNodeImage(5, laptopImageID);
+	for(uint16_t i = 6; i <= 8; i++) {
 		anim.UpdateNodeSize(i, 2, 2);
-		anim.UpdateNodeImage(i, workstationImageID);
+		anim.UpdateNodeImage(i, serverImageID);
 	}
+	for(uint16_t i = 9; i <= 11; i++) {
+			anim.UpdateNodeSize(i, 2, 2);
+			anim.UpdateNodeImage(i, workstationImageID);
+		}
 
 	// Enable datapath stats and pcap traces at hosts, switch(es), and controller(s)
 	if (trace)

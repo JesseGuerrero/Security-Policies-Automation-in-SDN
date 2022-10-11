@@ -29,6 +29,7 @@
 #include "ns3/applications-module.h"
 #include "ns3/yans-wifi-channel.h"
 #include "ns3/yans-wifi-helper.h"
+#include "ns3/mobility-module.h"
 
 using namespace ns3;
 
@@ -155,7 +156,7 @@ main (int argc, char *argv[])
 	Ptr<Node> cell = CreateObject<Node>();
 	NodeContainer wirelessPair;
 	wirelessPair.Add(cell); wirelessPair.Add(apiNode);
-	SetNodeXY(cell, 3, 7);
+	//SetNodeXY(cell, 3, 7);
 	WifiHelper wifi;
 	std::string phyMode ("DsssRate1Mbps");
 	YansWifiPhyHelper wifiPhy =  YansWifiPhyHelper::Default ();
@@ -187,11 +188,21 @@ main (int argc, char *argv[])
 	ApplicationContainer pingApps2 = pingHelper2.Install(cell);
 	pingApps2.Start (Seconds (6));
 
-	AnimationInterface anim("D2.xml");
+	MobilityHelper mob; mob.SetMobilityModel("ns3::ConstantAccelerationMobilityModel"); mob.Install(cell);
+	Ptr<ConstantAccelerationMobilityModel> m0 = DynamicCast<ConstantAccelerationMobilityModel>(cell->GetObject<MobilityModel> ());
+	cell->GetObject<MobilityModel>();
+
+	//Initial positions
+	m0->SetPosition(Vector(3, 7, 0));
+	m0->SetVelocityAndAcceleration(Vector(0, -0.3, 0), Vector(0, 0, 0));
+
+
+	AnimationInterface anim("D3.xml");
 	uint32_t switchImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Switch.png");
-	uint32_t workstationImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Workstation.png");
+	uint32_t workstationImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/workstation.png");
 	uint32_t SDNImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/SDN.png");
 	uint32_t APIImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/API.png");
+	uint32_t cellImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Cell.png");
 	anim.UpdateNodeColor(controllerNode, 0, 0, 0);
 	anim.SetBackgroundImage("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/background.png", -4, -5, 0.025, 0.0325, 1);
 	for(uint16_t i = 0; i < allHosts.size(); i++) {
@@ -200,33 +211,35 @@ main (int argc, char *argv[])
 			anim.UpdateNodeColor(hosts.Get(j), 0, 255, 255);
 		}
 	}
-	//API
+	//API, Cell
 	anim.UpdateNodeImage(13,APIImageID);
 	anim.UpdateNodeSize(13, 3, 3);
+	anim.UpdateNodeImage(14, cellImageID);
+	anim.UpdateNodeSize(14, 2.5, 2.5);
+
 	//Controller
 	anim.UpdateNodeImage(3, SDNImageID);
 	anim.UpdateNodeSize(3, 3, 3);
 	anim.UpdateNodeDescription(3, "SDN Controller");
 	anim.UpdateNodeDescription(2, "Switches");
-	anim.UpdateNodeDescription(12, "Workstations");
+	anim.UpdateNodeDescription(12, "Nodes");
 	//Switch
 	for(uint16_t i = 0; i <= 2; i++) {
 		anim.UpdateNodeImage(i, switchImageID);
 		anim.UpdateNodeSize(i, 3, 3);
 	}
 	//Hosts
-	for(uint16_t i = 4; i <= 12; i++) {
+	anim.UpdateNodeSize(4, 2, 2);
+	anim.UpdateNodeImage(4, routerImageID);
+	anim.UpdateNodeSize(5, 2, 2);
+	anim.UpdateNodeImage(5, laptopImageID);
+	for(uint16_t i = 6; i <= 8; i++) {
+		anim.UpdateNodeSize(i, 2, 2);
+		anim.UpdateNodeImage(i, serverImageID);
+	}
+	for(uint16_t i = 9; i <= 11; i++) {
 		anim.UpdateNodeSize(i, 2, 2);
 		anim.UpdateNodeImage(i, workstationImageID);
-	}
-
-	// Enable datapath stats and pcap traces at hosts, switch(es), and controller(s)
-	if (trace)
-	{
-	  of13Helper->EnableOpenFlowPcap ("openflow");
-	  of13Helper->EnableDatapathStats ("switch-stats");
-	  csmaHelper.EnablePcap ("switch", switchPorts, true);
-	  csmaHelper.EnablePcap ("host", hostDevices);
 	}
 
 	// Run the simulation
