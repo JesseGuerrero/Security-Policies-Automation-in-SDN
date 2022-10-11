@@ -88,7 +88,7 @@ main (int argc, char *argv[])
 	pingHelper.SetAttribute ("Interval", TimeValue (Seconds (100)));
 	pingHelper.SetAttribute ("Verbose", BooleanValue (true));
 
-	ApplicationContainer pingApps = pingHelper.Install(hosts1.Get(0));
+	ApplicationContainer pingApps = pingHelper.Install(hosts1.Get(1));
 	pingApps.Start (Seconds (3));
 
 	SetNodeXY(controllerNode, 15, 5);
@@ -98,9 +98,7 @@ main (int argc, char *argv[])
 	allHosts.push_back(hosts1);
 	allHosts.push_back(hosts2);
 	allHosts.push_back(hosts3);
-	AnimationInterface anim("OfExampleAnim.xml");
-
-	//AnimationInterface anim("OfExampleAnim.xml");
+	AnimationInterface anim("D2.xml");
 	uint32_t switchImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Switch.png");
 	uint32_t workstationImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/workstation.png");
 	uint32_t SDNImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/SDN.png");
@@ -133,9 +131,9 @@ main (int argc, char *argv[])
 		anim.UpdateNodeImage(i, serverImageID);
 	}
 	for(uint16_t i = 9; i <= 11; i++) {
-			anim.UpdateNodeSize(i, 2, 2);
-			anim.UpdateNodeImage(i, workstationImageID);
-		}
+		anim.UpdateNodeSize(i, 2, 2);
+		anim.UpdateNodeImage(i, workstationImageID);
+	}
 
 	// Enable datapath stats and pcap traces at hosts, switch(es), and controller(s)
 	if (trace)

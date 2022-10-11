@@ -48,6 +48,7 @@ void InstallPing(Ptr<Node> src, Ptr<Node> dest);
 void MacTxTrace(std::string context, Ptr<const Packet> pkt);
 void turnPingDevicesOn();
 void toggleSwitchRouting(uint16_t switchID, bool isOn);
+void toggleSwitchRouting2(uint16_t switchID, bool isOn);
 
 int
 main (int argc, char *argv[])
@@ -96,13 +97,13 @@ main (int argc, char *argv[])
 
 
 	NodeContainer hosts1, hosts2, hosts3;
-	hosts1.Create (3); hosts2.Create(3); hosts3.Create(3);
+	hosts1.Create (2); hosts2.Create(3); hosts3.Create(3);
 	// Create two host nodes
 	//switch 1
 	SetupSwitch(hosts1, 0, 3);
 	SetupSwitch(hosts2, 1, 10);
 	SetupSwitch(hosts3, 2, 17);
-	toggleSwitchRouting(0, false);
+	toggleSwitchRouting2(0, false);
 	toggleSwitchRouting(1, false);
 	toggleSwitchRouting(2, false);
 	turnPingDevicesOn();
@@ -112,11 +113,11 @@ main (int argc, char *argv[])
 	of13Helper->CreateOpenFlowChannels ();
 
 	SetupIpv4Addresses();
-	V4PingHelper pingHelper = V4PingHelper ("10.1.1.4");
+	V4PingHelper pingHelper = V4PingHelper ("10.1.1.3");
 	pingHelper.SetAttribute ("Interval", TimeValue (Seconds (10)));
 	pingHelper.SetAttribute ("Verbose", BooleanValue (true));
 
-	ApplicationContainer pingApps = pingHelper.Install(hosts1.Get(0));
+	ApplicationContainer pingApps = pingHelper.Install(hosts1.Get(1));
 	pingApps.Start (Seconds (1));
 	SetNodeXY(controllerNode, 15, 5);
 	SetAllNodesXY(switches, 5, 12.5, 7.5);
@@ -198,11 +199,15 @@ main (int argc, char *argv[])
 
 
 	AnimationInterface anim("D3.xml");
+	anim.SetMobilityPollInterval(MilliSeconds(100));
+	uint32_t APIImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/API.png");
+	uint32_t cellImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Cell.png");
 	uint32_t switchImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Switch.png");
 	uint32_t workstationImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/workstation.png");
 	uint32_t SDNImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/SDN.png");
-	uint32_t APIImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/API.png");
-	uint32_t cellImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/Cell.png");
+	uint32_t routerImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/router.png");
+	uint32_t laptopImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/laptop.png");
+	uint32_t serverImageID = anim.AddResource("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/server.png");
 	anim.UpdateNodeColor(controllerNode, 0, 0, 0);
 	anim.SetBackgroundImage("/home/brian-jesse/Downloads/bake/source/ns-3.32/scratch/background.png", -4, -5, 0.025, 0.0325, 1);
 	for(uint16_t i = 0; i < allHosts.size(); i++) {
@@ -212,10 +217,10 @@ main (int argc, char *argv[])
 		}
 	}
 	//API, Cell
-	anim.UpdateNodeImage(13,APIImageID);
-	anim.UpdateNodeSize(13, 3, 3);
-	anim.UpdateNodeImage(14, cellImageID);
-	anim.UpdateNodeSize(14, 2.5, 2.5);
+	anim.UpdateNodeImage(12,APIImageID);
+	anim.UpdateNodeSize(12, 3, 3);
+	anim.UpdateNodeImage(13, cellImageID);
+	anim.UpdateNodeSize(13, 2.5, 2.5);
 
 	//Controller
 	anim.UpdateNodeImage(3, SDNImageID);
@@ -229,21 +234,21 @@ main (int argc, char *argv[])
 		anim.UpdateNodeSize(i, 3, 3);
 	}
 	//Hosts
-	anim.UpdateNodeSize(4, 2, 2);
+	anim.UpdateNodeSize(4, 2.5, 2.5);
 	anim.UpdateNodeImage(4, routerImageID);
-	anim.UpdateNodeSize(5, 2, 2);
+	anim.UpdateNodeSize(5, 2.5, 2.5);
 	anim.UpdateNodeImage(5, laptopImageID);
 	for(uint16_t i = 6; i <= 8; i++) {
-		anim.UpdateNodeSize(i, 2, 2);
+		anim.UpdateNodeSize(i, 2.5, 2.5);
 		anim.UpdateNodeImage(i, serverImageID);
 	}
 	for(uint16_t i = 9; i <= 11; i++) {
-		anim.UpdateNodeSize(i, 2, 2);
+		anim.UpdateNodeSize(i, 2.5, 2.5);
 		anim.UpdateNodeImage(i, workstationImageID);
 	}
 
 	// Run the simulation
-	Simulator::Schedule(Seconds(6), &toggleSwitchRouting, 0, true);
+	Simulator::Schedule(Seconds(6), &toggleSwitchRouting2, 0, true);
 	Simulator::Schedule(Seconds(6), &toggleSwitchRouting, 1, true);
 	Simulator::Schedule(Seconds(6), &toggleSwitchRouting, 2, true);
 	Simulator::Stop (Seconds (simTime));
@@ -301,12 +306,24 @@ void toggleSwitchRouting(uint16_t switchID, bool isOn) {
 	}
 }
 
-void turnPingDevicesOn() {
-	for(int i = 0; i < 2; i++) {
-		Ptr<NetDevice> dev_i = switches.Get(i)->GetDevice(0);
+void toggleSwitchRouting2(uint16_t switchID, bool isOn) {
+	for (size_t i = 0; i < 2; i++)
+	{
+		Ptr<NetDevice> dev_i = switches.Get(switchID)->GetDevice(i);
 		if(dev_i->GetInstanceTypeId() == CsmaNetDevice::GetTypeId()) {
-			dev_i->SetAttribute ("SendEnable", BooleanValue (true));
+			dev_i->SetAttribute ("SendEnable", BooleanValue (isOn));
 		}
+	}
+}
+
+void turnPingDevicesOn() {
+	Ptr<NetDevice> dev_1 = switches.Get(0)->GetDevice(1);
+	if(dev_1->GetInstanceTypeId() == CsmaNetDevice::GetTypeId()) {
+		dev_1->SetAttribute ("SendEnable", BooleanValue (true));
+	}
+	Ptr<NetDevice> dev_2 = switches.Get(1)->GetDevice(0);
+	if(dev_2->GetInstanceTypeId() == CsmaNetDevice::GetTypeId()) {
+		dev_2->SetAttribute ("SendEnable", BooleanValue (true));
 	}
 }
 
