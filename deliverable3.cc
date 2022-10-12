@@ -30,12 +30,14 @@
 #include "ns3/yans-wifi-channel.h"
 #include "ns3/yans-wifi-helper.h"
 #include "ns3/mobility-module.h"
+#include "ns3/quic-module.h"
 
 using namespace ns3;
 
 Ptr<OFSwitch13InternalHelper> of13Helper = CreateObject<OFSwitch13InternalHelper> ();
 NodeContainer switches;
 InternetStackHelper internet; // Install the TCP/IP stack into hosts nodes
+QuicHelper quickStack;
 CsmaHelper csmaHelper;
 NetDeviceContainer hostDevices;
 NetDeviceContainer switchPorts;
@@ -93,6 +95,7 @@ main (int argc, char *argv[])
 	Names::Add("Controller", controllerNode);
 
 	// Configure the OpenFlow network domain
+	quickStack.Install(controllerNode);
 	of13Helper->InstallController (controllerNode);
 
 
@@ -134,12 +137,28 @@ main (int argc, char *argv[])
 	pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
 	NetDeviceContainer webPairNetDev;
 	webPairNetDev = pointToPoint.Install (apiNode, controllerNode);
-	internet.Install(apiNode);
+	quickStack.Install(apiNode);
 
 	Ipv4AddressHelper address;
 	address.SetBase ("10.1.5.0", "255.255.255.0");
 	Ipv4InterfaceContainer webPairInterface;
 	webPairInterface = address.Assign (webPairNetDev);
+
+
+	QuicEchoServerHelper echoServer3 (80);
+	ApplicationContainer serverApps3 = echoServer3.Install (controllerNode);
+	serverApps3.Start (Seconds (8));
+	serverApps3.Stop (Seconds (10));
+
+	QuicEchoClientHelper echoClient3 (webPairInterface.GetAddress(1), 80);
+	echoClient3.SetAttribute ("MaxPackets", UintegerValue (1));
+	echoClient3.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
+	//echoClient.SetAttribute ("MaxStreamData", UintegerValue (1024));
+
+	ApplicationContainer clientApps3 = echoClient3.Install (apiNode);
+	echoClient3.SetFill (clientApps3.Get (0), "Hello World");
+	clientApps3.Start (Seconds (7));
+	clientApps3.Stop (Seconds (8));/*
 
 	UdpEchoServerHelper echoServer (80);
 	ApplicationContainer serverApps = echoServer.Install (controllerNode);
@@ -152,7 +171,7 @@ main (int argc, char *argv[])
 	echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
 	ApplicationContainer clientApps = echoClient.Install(apiNode);
 	clientApps.Start (Seconds (7));
-	clientApps.Stop (Seconds (8));
+	clientApps.Stop (Seconds (8));*/
 
 	Ptr<Node> cell = CreateObject<Node>();
 	NodeContainer wirelessPair;
@@ -234,16 +253,16 @@ main (int argc, char *argv[])
 		anim.UpdateNodeSize(i, 3, 3);
 	}
 	//Hosts
-	anim.UpdateNodeSize(4, 2.5, 2.5);
+	anim.UpdateNodeSize(4, 3, 3);
 	anim.UpdateNodeImage(4, routerImageID);
-	anim.UpdateNodeSize(5, 2.5, 2.5);
+	anim.UpdateNodeSize(5, 3, 3);
 	anim.UpdateNodeImage(5, laptopImageID);
 	for(uint16_t i = 6; i <= 8; i++) {
-		anim.UpdateNodeSize(i, 2.5, 2.5);
+		anim.UpdateNodeSize(i, 3, 3);
 		anim.UpdateNodeImage(i, serverImageID);
 	}
 	for(uint16_t i = 9; i <= 11; i++) {
-		anim.UpdateNodeSize(i, 2.5, 2.5);
+		anim.UpdateNodeSize(i, 3, 3);
 		anim.UpdateNodeImage(i, workstationImageID);
 	}
 
@@ -293,7 +312,7 @@ void SetupSwitch(NodeContainer hosts, uint16_t switchID, uint16_t xCoord) {
 	}
 	of13Helper->InstallSwitch (switches.Get(switchID), switchPorts);
 	internet.Install (hosts);
-	SetAllNodesXY(hosts, xCoord, 20, 1);
+	SetAllNodesXY(hosts, xCoord, 20, 2);
 }
 
 void toggleSwitchRouting(uint16_t switchID, bool isOn) {

@@ -122,16 +122,16 @@ main (int argc, char *argv[])
 		anim.UpdateNodeSize(i, 3, 3);
 	}
 	//Hosts
-	anim.UpdateNodeSize(4, 2, 2);
+	anim.UpdateNodeSize(4, 3, 3);
 	anim.UpdateNodeImage(4, routerImageID);
-	anim.UpdateNodeSize(5, 2, 2);
+	anim.UpdateNodeSize(5, 3, 3);
 	anim.UpdateNodeImage(5, laptopImageID);
 	for(uint16_t i = 6; i <= 8; i++) {
-		anim.UpdateNodeSize(i, 2, 2);
+		anim.UpdateNodeSize(i, 3, 3);
 		anim.UpdateNodeImage(i, serverImageID);
 	}
 	for(uint16_t i = 9; i <= 11; i++) {
-		anim.UpdateNodeSize(i, 2, 2);
+		anim.UpdateNodeSize(i, 3, 3);
 		anim.UpdateNodeImage(i, workstationImageID);
 	}
 
@@ -186,7 +186,7 @@ void SetupSwitch(NodeContainer hosts, uint16_t switchID, uint16_t xCoord) {
 	}
 	of13Helper->InstallSwitch (switches.Get(switchID), switchPorts);
 	internet.Install (hosts);
-	SetAllNodesXY(hosts, xCoord, 20, 1);
+	SetAllNodesXY(hosts, xCoord, 20, 2);
 }
 
 void SetupIpv4Addresses() {
