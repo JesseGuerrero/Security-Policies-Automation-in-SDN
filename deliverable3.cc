@@ -37,7 +37,6 @@ using namespace ns3;
 Ptr<OFSwitch13InternalHelper> of13Helper = CreateObject<OFSwitch13InternalHelper> ();
 NodeContainer switches;
 InternetStackHelper internet; // Install the TCP/IP stack into hosts nodes
-QuicHelper quickStack;
 CsmaHelper csmaHelper;
 NetDeviceContainer hostDevices;
 NetDeviceContainer switchPorts;
@@ -55,7 +54,8 @@ void toggleSwitchRouting2(uint16_t switchID, bool isOn);
 int
 main (int argc, char *argv[])
 {
-	uint16_t simTime = 38;
+
+	uint16_t simTime = 20;
 	bool verbose = false;
 	bool trace = false;
 
@@ -84,6 +84,7 @@ main (int argc, char *argv[])
 	GlobalValue::Bind ("ChecksumEnabled", BooleanValue (true));
 
 
+
 	switches.Create(3);
 
 	// Use the CsmaHelper to connect host nodes to the switch node
@@ -91,11 +92,46 @@ main (int argc, char *argv[])
 	csmaHelper.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (500)));
 
 	// Create the controller node
-	Ptr<Node> controllerNode = CreateObject<Node> ();
-	Names::Add("Controller", controllerNode);
+	NodeContainer controllerPlusAPI;
+	controllerPlusAPI.Create (2);
+	auto apiNode = controllerPlusAPI.Get (0);
+	auto controllerNode = controllerPlusAPI.Get (1);
+
+	PointToPointHelper pointToPoint;
+	pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
+	pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
+
+	NetDeviceContainer webPairNetDev;
+	webPairNetDev = pointToPoint.Install (controllerPlusAPI);
+
+	QuicHelper stack;
+	stack.InstallQuic (controllerPlusAPI);
+
+	Ipv4AddressHelper address;
+	address.SetBase ("10.1.5.0", "255.255.255.0");
+
+	Ipv4InterfaceContainer webPairInterface = address.Assign (webPairNetDev);
+
+	QuicEchoServerHelper echoServer3 (9);
+
+	ApplicationContainer serverApps3 = echoServer3.Install (controllerPlusAPI.Get (1));
+	serverApps3.Start (Seconds (1.0));
+	serverApps3.Stop (Seconds (20.0));
+
+	QuicEchoClientHelper echoClient3 (webPairInterface.GetAddress (1), 9);
+	echoClient3.SetAttribute ("MaxPackets", UintegerValue (1));
+	echoClient3.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
+	//echoClient.SetAttribute ("MaxStreamData", UintegerValue (1024));
+
+	ApplicationContainer clientApps3 = echoClient3.Install (controllerPlusAPI.Get (0));
+	echoClient3.SetFill (clientApps3.Get (0), "Hello World");
+	clientApps3.Start (Seconds (7.0));
+	clientApps3.Stop (Seconds (8.0));
+
 
 	// Configure the OpenFlow network domain
-	quickStack.Install(controllerNode);
+
+
 	of13Helper->InstallController (controllerNode);
 
 
@@ -130,36 +166,9 @@ main (int argc, char *argv[])
 	allHosts.push_back(hosts2);
 	allHosts.push_back(hosts3);
 
-	Ptr<Node> apiNode = CreateObject<Node>();
 	SetNodeXY(apiNode, 8, 3);
-	PointToPointHelper pointToPoint;
-	pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("10Mbps"));
-	pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
-	NetDeviceContainer webPairNetDev;
-	webPairNetDev = pointToPoint.Install (apiNode, controllerNode);
-	quickStack.Install(apiNode);
 
-	Ipv4AddressHelper address;
-	address.SetBase ("10.1.5.0", "255.255.255.0");
-	Ipv4InterfaceContainer webPairInterface;
-	webPairInterface = address.Assign (webPairNetDev);
-
-
-	QuicEchoServerHelper echoServer3 (80);
-	ApplicationContainer serverApps3 = echoServer3.Install (controllerNode);
-	serverApps3.Start (Seconds (8));
-	serverApps3.Stop (Seconds (10));
-
-	QuicEchoClientHelper echoClient3 (webPairInterface.GetAddress(1), 80);
-	echoClient3.SetAttribute ("MaxPackets", UintegerValue (1));
-	echoClient3.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
-	//echoClient.SetAttribute ("MaxStreamData", UintegerValue (1024));
-
-	ApplicationContainer clientApps3 = echoClient3.Install (apiNode);
-	echoClient3.SetFill (clientApps3.Get (0), "Hello World");
-	clientApps3.Start (Seconds (7));
-	clientApps3.Stop (Seconds (8));/*
-
+/*
 	UdpEchoServerHelper echoServer (80);
 	ApplicationContainer serverApps = echoServer.Install (controllerNode);
 	serverApps.Start (Seconds (8));
@@ -236,15 +245,15 @@ main (int argc, char *argv[])
 		}
 	}
 	//API, Cell
-	anim.UpdateNodeImage(12,APIImageID);
-	anim.UpdateNodeSize(12, 3, 3);
+	anim.UpdateNodeImage(3,APIImageID);
+	anim.UpdateNodeSize(3, 3, 3);
 	anim.UpdateNodeImage(13, cellImageID);
 	anim.UpdateNodeSize(13, 2.5, 2.5);
 
 	//Controller
-	anim.UpdateNodeImage(3, SDNImageID);
-	anim.UpdateNodeSize(3, 3, 3);
-	anim.UpdateNodeDescription(3, "SDN Controller");
+	anim.UpdateNodeImage(4, SDNImageID);
+	anim.UpdateNodeSize(4, 3, 3);
+	anim.UpdateNodeDescription(4, "SDN Controller");
 	anim.UpdateNodeDescription(2, "Switches");
 	anim.UpdateNodeDescription(12, "Nodes");
 	//Switch
@@ -253,15 +262,15 @@ main (int argc, char *argv[])
 		anim.UpdateNodeSize(i, 3, 3);
 	}
 	//Hosts
-	anim.UpdateNodeSize(4, 3, 3);
-	anim.UpdateNodeImage(4, routerImageID);
 	anim.UpdateNodeSize(5, 3, 3);
-	anim.UpdateNodeImage(5, laptopImageID);
-	for(uint16_t i = 6; i <= 8; i++) {
+	anim.UpdateNodeImage(5, routerImageID);
+	anim.UpdateNodeSize(6, 3, 3);
+	anim.UpdateNodeImage(6, laptopImageID);
+	for(uint16_t i = 7; i <= 9; i++) {
 		anim.UpdateNodeSize(i, 3, 3);
 		anim.UpdateNodeImage(i, serverImageID);
 	}
-	for(uint16_t i = 9; i <= 11; i++) {
+	for(uint16_t i = 10; i <= 12; i++) {
 		anim.UpdateNodeSize(i, 3, 3);
 		anim.UpdateNodeImage(i, workstationImageID);
 	}
@@ -270,7 +279,9 @@ main (int argc, char *argv[])
 	Simulator::Schedule(Seconds(6), &toggleSwitchRouting2, 0, true);
 	Simulator::Schedule(Seconds(6), &toggleSwitchRouting, 1, true);
 	Simulator::Schedule(Seconds(6), &toggleSwitchRouting, 2, true);
+
 	Simulator::Stop (Seconds (simTime));
+
 	Simulator::Run ();
 	Simulator::Destroy ();
 }
