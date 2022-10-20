@@ -10,6 +10,6 @@ Deliverable 2 Video: https://bit.ly/3EdDe2n
 
 [![Watch the video](https://i.imgur.com/LRCHqSH.png)](https://bit.ly/3EdDe2n)<br><br>
 
-
+Readyness!
 
 
