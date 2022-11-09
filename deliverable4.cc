@@ -37,6 +37,7 @@ using namespace ns3;
 Ptr<OFSwitch13InternalHelper> of13Helper = CreateObject<OFSwitch13InternalHelper> ();
 NodeContainer switches;
 InternetStackHelper internet; // Install the TCP/IP stack into hosts nodes
+QuicHelper quickStack;
 CsmaHelper csmaHelper;
 NetDeviceContainer hostDevices;
 NetDeviceContainer switchPorts;
@@ -50,6 +51,8 @@ void MacTxTrace(std::string context, Ptr<const Packet> pkt);
 void turnPingDevicesOn();
 void toggleSwitchRouting(uint16_t switchID, bool isOn);
 void toggleSwitchRouting2(uint16_t switchID, bool isOn);
+void beginQuic(ApplicationContainer clientApps4, int seconds);
+void endQuic(ApplicationContainer clientApps4);
 
 int
 main (int argc, char *argv[])
@@ -104,8 +107,8 @@ main (int argc, char *argv[])
 	NetDeviceContainer webPairNetDev;
 	webPairNetDev = pointToPoint.Install (controllerPlusAPI);
 
-	QuicHelper stack;
-	stack.InstallQuic (controllerPlusAPI);
+
+	quickStack.InstallQuic (controllerPlusAPI);
 
 	Ipv4AddressHelper address;
 	address.SetBase ("10.1.5.0", "255.255.255.0");
@@ -152,12 +155,36 @@ main (int argc, char *argv[])
 	of13Helper->CreateOpenFlowChannels ();
 
 	SetupIpv4Addresses();
-	V4PingHelper pingHelper = V4PingHelper ("10.1.1.3");
-	pingHelper.SetAttribute ("Interval", TimeValue (Seconds (10)));
-	pingHelper.SetAttribute ("Verbose", BooleanValue (true));
+//	V4PingHelper pingHelper = V4PingHelper ("10.1.1.3");
+//	pingHelper.SetAttribute ("Interval", TimeValue (Seconds (10)));
+//	pingHelper.SetAttribute ("Verbose", BooleanValue (true));
+//
+//	ApplicationContainer pingApps = pingHelper.Install(hosts1.Get(1));
+//	pingApps.Start (Seconds (1));
 
-	ApplicationContainer pingApps = pingHelper.Install(hosts1.Get(1));
-	pingApps.Start (Seconds (1));
+	//------
+	QuicEchoServerHelper echoServer4 (9);
+
+	ApplicationContainer serverApps4 = echoServer4.Install (hosts2.Get (0));
+	serverApps4.Start (Seconds (1.0));
+	serverApps4.Stop (Seconds (20.0));
+
+	QuicEchoClientHelper echoClient4 (Ipv4Address("10.1.1.3"), 9);
+	echoClient4.SetAttribute ("MaxPackets", UintegerValue (2));
+	echoClient4.SetAttribute ("Interval", TimeValue (Seconds (10.0)));
+	//echoClient.SetAttribute ("MaxStreamData", UintegerValue (1024));
+
+	ApplicationContainer clientApps4 = echoClient4.Install (hosts1.Get (1));
+	echoClient4.SetFill (clientApps4.Get (0), "Hello World");
+	clientApps4.Start(Seconds(1));
+	clientApps4.Stop(Seconds(3));
+
+	clientApps4 = echoClient4.Install (hosts1.Get (1));
+	echoClient4.SetFill (clientApps4.Get (0), "Hello World");
+	clientApps4.Start(Seconds(10));
+	clientApps4.Stop(Seconds(13));
+
+	//------
 	SetNodeXY(controllerNode, 15, 5);
 	SetAllNodesXY(switches, 5, 12.5, 7.5);
 
@@ -272,6 +299,14 @@ main (int argc, char *argv[])
 	Simulator::Destroy ();
 }
 
+void beginQuic(ApplicationContainer clientApps4, int seconds) {
+	clientApps4.Start(Seconds(seconds));
+}
+
+void endQuic(ApplicationContainer clientApps4) {
+	clientApps4.End();
+}
+
 void SetAllNodesXY(NodeContainer nodes, double x, double y, double deltaX) {
 	MobilityHelper mobileHosts;
 	mobileHosts.SetPositionAllocator ("ns3::GridPositionAllocator",
@@ -308,7 +343,7 @@ void SetupSwitch(NodeContainer hosts, uint16_t switchID, uint16_t xCoord) {
 		Ptr<Node> host = hosts.Get(i);
 	}
 	of13Helper->InstallSwitch (switches.Get(switchID), switchPorts);
-	internet.Install (hosts);
+	quickStack.InstallQuic (hosts);
 	SetAllNodesXY(hosts, xCoord, 20, 2);
 }
 
