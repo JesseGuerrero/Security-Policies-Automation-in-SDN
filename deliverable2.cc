@@ -26,6 +26,11 @@ void SetupSwitch(NodeContainer hosts, uint16_t switchID, uint16_t xCoord);
 void SetupIpv4Addresses();
 void InstallPing(Ptr<Node> src, Ptr<Node> dest);
 
+void MacTxTrace(std::string context, Ptr<const Packet> pkt) {
+	std::cout << context << std::endl;
+	std::cout << "\tMaxTX Size=" << pkt->GetSize() << "\t" << Simulator::Now().As(ns3::Time::Unit::MS) << std::endl;
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -62,7 +67,7 @@ main (int argc, char *argv[])
 
 	// Use the CsmaHelper to connect host nodes to the switch node
 	csmaHelper.SetChannelAttribute ("DataRate", DataRateValue (DataRate ("100Mbps")));
-	csmaHelper.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (500)));
+	csmaHelper.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (1)));
 
 	// Create the controller node
 	Ptr<Node> controllerNode = CreateObject<Node> ();
@@ -78,6 +83,10 @@ main (int argc, char *argv[])
 	SetupSwitch(hosts1, 0, 3);
 	SetupSwitch(hosts2, 1, 10);
 	SetupSwitch(hosts3, 2, 17);
+	Config::Connect ("/NodeList/5/DeviceList/*/$ns3::CsmaNetDevice/MacRx", MakeCallback(&MacTxTrace));
+	Config::Connect ("/NodeList/6/DeviceList/*/$ns3::CsmaNetDevice/MacRx", MakeCallback(&MacTxTrace));
+	Config::Connect ("/NodeList/5/DeviceList/*/$ns3::CsmaNetDevice/PhyTxBegin", MakeCallback(&MacTxTrace));
+	Config::Connect ("/NodeList/6/DeviceList/*/$ns3::CsmaNetDevice/PhyTxBegin", MakeCallback(&MacTxTrace));
 
 	//OfSwitch Config
 	of13Helper->SetChannelType(OFSwitch13Helper::ChannelType::DEDICATEDP2P);
