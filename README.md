@@ -1,4 +1,4 @@
-<h1>Computer-Networks-5306-Semester-Project</h1>
+<h1>Security-Policies-Automation-in-SDN</h1>
 Steps to run:<br>
 1. Install NS3 with dependencies & pyvis<br>
 2. Run deliverable*.cc in scratch/deliverable9.cc<br><br>
